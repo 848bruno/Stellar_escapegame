@@ -13,6 +13,10 @@ class Dashboard:
         # Display nearby objects
         y_offset = 40
         for obj in nearby_objects:
-            obj_text = self.font.render(f"{obj.type} - Mass: {obj.mass} kg", True, (255, 255, 255))
+            obj_text = self.font.render(
+                f"{obj.type} - Mass: {obj.mass:.2e} kg",  # Scientific notation
+                True,
+                (255, 255, 255)  # Closing parenthesis added here
+            )
             self.screen.blit(obj_text, (10, y_offset))
             y_offset += 20

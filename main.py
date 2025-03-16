@@ -11,7 +11,7 @@ screen = pygame.display.set_mode((1280, 720))
 clock = pygame.time.Clock()
 
 # Load assets
-spaceship_img = pygame.image.load("assets/spaceship.png")
+spaceship_img = pygame.image.load("assets/spaceship.jpg")
 
 # Initialize spacecraft
 ship = {
