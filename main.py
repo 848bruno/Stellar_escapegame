@@ -24,8 +24,8 @@ assets = {
     "spaceship": load_image("./assets/spaceship.jpg", (40, 40)),
     "star": load_image("assets/star.png", (100, 100)),
     "planet": load_image("assets/planet.png", (80, 80)),
-    "blackhole": load_image("assets/blackhole.png", (60, 60)),
-    "debris": load_image("assets/debris.png", (30, 30))
+    "blackhole": load_image("assets/blackhole.jpg", (60, 60)),
+    "debris": load_image("assets/debris.jpg", (30, 30))
 }
 
 # Initialize spacecraft
