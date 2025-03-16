@@ -21,7 +21,7 @@ def load_image(path, size=None):
         sys.exit()
 
 assets = {
-    "spaceship": load_image("assets/spaceship.png", (40, 40)),
+    "spaceship": load_image("./assets/spaceship.jpg", (40, 40)),
     "star": load_image("assets/star.png", (100, 100)),
     "planet": load_image("assets/planet.png", (80, 80)),
     "blackhole": load_image("assets/blackhole.png", (60, 60)),
