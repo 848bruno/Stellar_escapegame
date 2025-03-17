@@ -11,7 +11,6 @@ screen = pygame.display.set_mode((1280, 720))
 pygame.display.set_caption("Stellar Escape")
 clock = pygame.time.Clock()
 
-# Load assets with scaling
 def load_image(path, size=None):
     try:
         img = pygame.image.load(path).convert_alpha()
@@ -21,7 +20,7 @@ def load_image(path, size=None):
         sys.exit()
 
 assets = {
-    "bg": load_image("assets/space_bg.png", (1280, 720)),  # Background image
+    "bg": load_image("assets/space_bg.png", (1280, 720)),
     "spaceship": load_image("assets/spaceship.jpg", (40, 40)),
     "star": load_image("assets/star.png", (100, 100)),
     "planet": load_image("assets/planet.png", (80, 80)),
@@ -29,25 +28,23 @@ assets = {
     "debris": load_image("assets/debris.jpg", (30, 30))
 }
 
-# Initialize spacecraft with float positions
+# Ship initialization with proper position handling
 ship = {
-    "x": 640.0,  # Float X position
-    "y": 360.0,  # Float Y position
+    "x": 640.0,
+    "y": 360.0,
     "energy": 1e12,
     "velocity": [0.0, 0.0],
-    "thrust": 0.8,  # Increased for better control
+    "thrust": 0.8,
     "mass": 1e5,
-    "rect": assets["spaceship"].get_rect()  # Rect for collision/rendering
+    "rect": pygame.Rect(0, 0, 40, 40)  # Empty rect, will be updated
 }
 
-# Initialize celestial bodies
 celestial_bodies = [
     CelestialBody(500, 300, 1.989e30, 50, "Star", assets["star"]),
     CelestialBody(800, 400, 5.97e24, 20, "Planet", assets["planet"]),
     CelestialBody(200, 200, 1e31, 30, "Black Hole", assets["blackhole"])
 ]
 
-# Initialize debris
 debris_objects = [
     Debris(400.0, 200.0, [0.3, 0.2], assets["debris"]),
     Debris(600.0, 500.0, [-0.2, 0.4], assets["debris"]),
@@ -74,76 +71,75 @@ def handle_input():
             ship["velocity"][0] += ship["thrust"]
             thrust_active = True
     
-    # Energy consumption
     if thrust_active:
-        ship["energy"] -= 3e4  # Adjusted energy drain
+        ship["energy"] -= 3e4
 
 running = True
 while running:
-    # Event handling
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
     
-    # Handle input
     handle_input()
     
-    # Update physics
+    # Physics calculations
     for body in celestial_bodies:
         dx = body.x - ship["x"]
         dy = body.y - ship["y"]
         distance = np.hypot(dx, dy)
         
-        if distance < 500:  # Gravity influence radius
+        if distance < 500 and distance > 10:  # Add minimum distance
             force = gravitational_force(body.mass, ship["mass"], distance)
             ship["velocity"][0] += force * dx / (distance + 1e-10) * 0.01
             ship["velocity"][1] += force * dy / (distance + 1e-10) * 0.01
     
-    # Update float positions
+    # Update position with screen wrapping first
     ship["x"] += ship["velocity"][0]
     ship["y"] += ship["velocity"][1]
+    ship["x"] %= 1280  # Wrap around before rect update
+    ship["y"] %= 720
     
-    # Update rect position (convert to integers)
-    ship["rect"].center = (int(ship["x"]), int(ship["y"]))
+    # Update rect with clamped integer values
+    ship["rect"].center = (
+        int(np.clip(ship["x"], 0, 1280)),
+        int(np.clip(ship["y"], 0, 720))
+    )
     
-    # Screen wrapping
-    ship["x"] = ship["x"] % 1280
-    ship["y"] = ship["y"] % 720
-    
-    # Update debris positions
+    # Update debris with proper wrapping
     for debris in debris_objects:
         debris.x += debris.velocity[0]
         debris.y += debris.velocity[1]
-        debris.x = debris.x % 1280
-        debris.y = debris.y % 720
+        debris.x %= 1280
+        debris.y %= 720
     
-    # Collision detection
+    # Collision detection with integer positions
+    ship_rect = assets["spaceship"].get_rect(center=ship["rect"].center)
     for debris in debris_objects:
-        debris_rect = debris.image.get_rect(center=(int(debris.x), int(debris.y)))
-        if ship["rect"].colliderect(debris_rect):
+        debris_rect = debris.image.get_rect(
+            center=(int(debris.x), int(debris.y)))
+        if ship_rect.colliderect(debris_rect):
             ship["energy"] -= 2e6
-            debris.x = np.random.uniform(0, 1280)
-            debris.y = np.random.uniform(0, 720)
+            debris.x, debris.y = np.random.uniform(0, 1280, 2)
     
-    # Render
-    screen.blit(assets["bg"], (0, 0))  # Starry background
+    # Rendering
+    screen.blit(assets["bg"], (0, 0))
     
-    # Draw celestial bodies
     for body in celestial_bodies:
-        img_rect = body.image.get_rect(center=(body.x, body.y))
-        screen.blit(body.image, img_rect)
+        screen.blit(body.image, body.image.get_rect(center=(body.x, body.y)))
     
-    # Draw debris
     for debris in debris_objects:
-        img_rect = debris.image.get_rect(center=(int(debris.x), int(debris.y)))
-        screen.blit(debris.image, img_rect)
+        screen.blit(debris.image, debris.image.get_rect(
+            center=(int(debris.x), int(debris.y))))
     
-    # Draw rotating spaceship
-    angle = np.degrees(np.arctan2(-ship["velocity"][1], ship["velocity"][0])) - 90
-    rotated_ship = pygame.transform.rotate(assets["spaceship"], angle)
+    # Rotate spaceship
+    if np.linalg.norm(ship["velocity"]) > 0.1:
+        angle = np.degrees(np.arctan2(-ship["velocity"][1], ship["velocity"][0])) - 90
+        rotated_ship = pygame.transform.rotate(assets["spaceship"], angle)
+    else:
+        rotated_ship = assets["spaceship"]
+    
     screen.blit(rotated_ship, rotated_ship.get_rect(center=ship["rect"].center))
     
-    # Update dashboard
     dashboard.draw(ship["energy"], ship["velocity"], celestial_bodies)
     
     pygame.display.flip()
